@@ -1,19 +1,15 @@
-from __future__ import annotations
-
-from typing import Protocol
-
-from pydantic import BaseModel
+import abc
 
 from ..source import SourceFile
 
 
-class SourceExtraction(BaseModel):
+class SourceExtraction:
     files: dict[str, SourceFile]
     files_found: int
     files_excluded: int
 
 
-class BatchConfig(BaseModel):
+class BatchConfig:
     size: int = 0
     parallel_threshold: int = 0
     parallel_size: int = 0
@@ -21,8 +17,19 @@ class BatchConfig(BaseModel):
     output_format: str = "json"
 
 
-class SourceExtractor(Protocol):
+class ExtractorRuntime:
     language: str
     file_extensions: tuple[str, ...]
     command: str
-    batch_config: BatchConfig
+
+
+class SourceExtractor(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def runtime(self) -> ExtractorRuntime:
+        raise NotImplementedError
+    
+    @property
+    @abc.abstractmethod
+    def batch_config(self) -> BatchConfig:
+        raise NotImplementedError
