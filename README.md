@@ -67,6 +67,6 @@ twine upload dist/modwire_extraction-1.0.0*
 ```
 
 The preferred release path is GitHub Actions. Publish a GitHub Release tagged
-`vX.Y.Z` or `X.Y.Z` after configuring PyPI Trusted Publishing for workflow
-`workflow.yml` and GitHub Environment `pypi`. The release workflow sets the
-package version from the release tag before building.
+`vX.Y.Z` or run the `Release` workflow manually for that tag after configuring
+PyPI Trusted Publishing for workflow `release.yml` and GitHub Environment
+`pypi`.

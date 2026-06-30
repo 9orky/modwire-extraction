@@ -7,7 +7,7 @@ Required before publishing `modwire-extraction` 1.0.0:
 - Configure PyPI Trusted Publishing for GitHub Actions:
   - Repository owner: `9orky`
   - Repository name: `modwire-extraction`
-  - Workflow name: `workflow.yml`
+  - Workflow name: `release.yml`
   - Environment name: `pypi`
 - Publish releases with a tag named `vX.Y.Z` or `X.Y.Z`. The workflow uses
   that tag to set the package version before building and verifies the
