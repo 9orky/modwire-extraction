@@ -111,6 +111,3 @@ def build_dependency_graph(extracted_files: dict[str, SourceFile]) -> Dependency
             graph.add_edge(file_path, imported_reference.normalized_path)
 
     return graph
-
-
-__all__ = ["DependencyGraph", "Edge", "Node", "build_dependency_graph"]
