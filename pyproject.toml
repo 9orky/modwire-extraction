@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "modwire-extraction"
-version = "1.0.0"
+version = "1.0.1"
 description = "Extraction implementation for modwire."
 readme = "README.md"
 license = "MIT"

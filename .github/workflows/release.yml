@@ -58,6 +58,49 @@ jobs:
           python-version: "3.12"
           cache: pip
 
+      - name: Set package version from release tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          tag = os.environ["RELEASE_TAG"]
+          version = tag.removeprefix("v")
+          if not re.fullmatch(
+              r"(0|[1-9]\d*)\."
+              r"(0|[1-9]\d*)\."
+              r"(0|[1-9]\d*)"
+              r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+              r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?",
+              version,
+          ):
+              raise SystemExit(f"Invalid release tag version: {tag}")
+
+          pyproject_path = Path("pyproject.toml")
+          lines = pyproject_path.read_text(encoding="utf-8").splitlines()
+          in_project = False
+          updated = False
+          for index, line in enumerate(lines):
+              if line.strip() == "[project]":
+                  in_project = True
+                  continue
+              if in_project and line.startswith("["):
+                  break
+              if in_project and line.startswith("version = "):
+                  lines[index] = f'version = "{version}"'
+                  updated = True
+                  break
+
+          if not updated:
+              raise SystemExit("Could not find [project] version in pyproject.toml")
+
+          pyproject_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print(f"Package version set from release tag: {version}")
+          PY
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -103,7 +146,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
-          python -c "import os, re; tag = os.environ['RELEASE_TAG']; version = tag.removeprefix('v'); assert re.fullmatch(r'[0-9]+\\.[0-9]+\\.[0-9]+(?:[a-zA-Z0-9._-]+)?', version), f'Invalid release tag version: {tag}'; import importlib.metadata as metadata; package_version = metadata.version('modwire-extraction'); assert package_version == version, f'Package version {package_version} does not match release tag {tag}'"
+          python -c "import os; import importlib.metadata as metadata; tag = os.environ['RELEASE_TAG']; version = tag.removeprefix('v'); package_version = metadata.version('modwire-extraction'); assert package_version == version, 'Package version %s does not match release tag %s' % (package_version, tag)"
 
       - name: Build distributions
         run: python -m build --outdir dist
