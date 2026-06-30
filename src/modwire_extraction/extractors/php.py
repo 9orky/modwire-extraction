@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-from ..definitions import SourceExport, SourceFile, SourceImport
+from .source import SourceExport, SourceFile, SourceImport
 from .base import (
     SourceExtraction,
     SourceExtractor,

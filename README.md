@@ -2,8 +2,11 @@
 
 Extraction implementation for Modwire.
 
-The package builds code maps for supported source trees and exposes the public
-API from `modwire_extraction.extraction`.
+The package is split into three public packages:
+
+- `modwire_extraction.extractors` returns source-file extraction results.
+- `modwire_extraction.graph` builds dependency graphs from extracted source files.
+- `modwire_extraction.code_map` composes extraction and graph data into a `CodeMap`.
 
 ## Install
 

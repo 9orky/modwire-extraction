@@ -9,13 +9,13 @@ from dataclasses import dataclass
 from posixpath import normpath
 from pathlib import Path, PurePosixPath
 
-from ..definitions import SourceExport, SourceFile, SourceImport
+from .source import SourceExport, SourceFile, SourceImport
 from .base import (
     ExtractionTarget,
     ExtractorProcessError,
     SourceExtraction,
     SourceExtractor,
-    _collect_extraction_targets,
+    collect_extraction_targets,
     _extract_files,
     _join_source_id,
     _validate_source_files,
@@ -92,7 +92,7 @@ class PythonExtractor(SourceExtractor):
         *,
         source_id_prefix: str = "",
     ) -> SourceExtraction:
-        targets, files_found, files_excluded = _collect_extraction_targets(
+        targets, files_found, files_excluded = collect_extraction_targets(
             sources_root,
             self.file_extensions,
             exclusions,

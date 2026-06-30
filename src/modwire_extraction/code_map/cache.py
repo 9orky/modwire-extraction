@@ -5,7 +5,8 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from .models import CodeMap, SourceManifest
+from .manifest import SourceManifest
+from .models import CodeMap
 from .serialization import (
     CodeMapSerializationError,
     deserialize_code_map,

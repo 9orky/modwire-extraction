@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .definitions import SourceFile
+from ..extractors.source import SourceFile
 
 
 @dataclass(frozen=True)

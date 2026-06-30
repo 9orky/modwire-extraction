@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..definitions import SourceFile
+from ..extractors.source import SourceFile
 from ..graph import DependencyGraph, Edge, Node
 from .models import CodeMap, ExtractionResult, ExtractionSummary
 

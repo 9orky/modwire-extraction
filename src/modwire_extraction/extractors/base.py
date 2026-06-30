@@ -11,7 +11,7 @@ from typing import Protocol
 
 from pydantic import TypeAdapter
 
-from ..definitions import (
+from .source import (
     SourceAbstractClass,
     SourceCall,
     SourceCallable,
@@ -214,7 +214,7 @@ def _extract_files(
     source_id_prefix: str = "",
     batch_size: int = 0,
 ) -> SourceExtraction:
-    targets, files_found, files_excluded = _collect_extraction_targets(
+    targets, files_found, files_excluded = collect_extraction_targets(
         sources_root,
         extractor.file_extensions,
         exclusions,
@@ -412,7 +412,7 @@ def _construct_models(model, values: object) -> list:
     ]
 
 
-def _collect_extraction_targets(
+def collect_extraction_targets(
     sources_root: Path,
     file_extensions: tuple[str, ...],
     exclusions: tuple[str, ...],

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from posixpath import normpath
 from pathlib import Path
 
-from ..definitions import SourceExport, SourceImport
+from .source import SourceExport, SourceImport
 from .base import SourceExtraction, SourceExtractor, _extract_files
 
 

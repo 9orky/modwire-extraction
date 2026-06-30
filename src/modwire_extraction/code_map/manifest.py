@@ -3,21 +3,87 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .._version import __version__
-from ..extractors import load_extractor
-from ..extractors.base import _collect_extraction_targets
+from ..extractors import collect_extraction_targets, load_extractor
 from ..extractors.resources import extractor_script_path
-from .models import SourceManifest, SourceManifestEntry
 from .roots import (
     DEFAULT_SOURCE_ROOTS,
+    SourceIdMode,
     SourceRoots,
     has_workspace_root,
     join_source_id,
     normalize_exclusions,
     source_id_prefix,
 )
+
+
+@dataclass(frozen=True)
+class SourceManifestEntry:
+    source_id: str
+    path: Path
+    size: int
+    mtime_ns: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source_id": self.source_id,
+            "path": str(self.path),
+            "size": self.size,
+            "mtime_ns": self.mtime_ns,
+        }
+
+
+@dataclass(frozen=True)
+class SourceManifest:
+    language: str
+    workspace_root: Path
+    sources_root: Path
+    source_id_root: str
+    source_id_mode: SourceIdMode
+    source_id_prefix: str
+    exclusions: tuple[str, ...]
+    file_extensions: tuple[str, ...]
+    runtime_command: str
+    runtime_path: str
+    runtime_mtime_ns: int
+    extractor_file: str
+    extractor_path: Path
+    extractor_mtime_ns: int
+    modwire_version: str
+    files_found: int
+    files_checked: int
+    files_excluded: int
+    entries: tuple[SourceManifestEntry, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "language": self.language,
+            "workspace_root": str(self.workspace_root),
+            "sources_root": str(self.sources_root),
+            "source_id_root": self.source_id_root,
+            "source_id_mode": self.source_id_mode,
+            "source_id_prefix": self.source_id_prefix,
+            "exclusions": list(self.exclusions),
+            "file_extensions": list(self.file_extensions),
+            "runtime_command": self.runtime_command,
+            "runtime_path": self.runtime_path,
+            "runtime_mtime_ns": self.runtime_mtime_ns,
+            "extractor_file": self.extractor_file,
+            "extractor_path": str(self.extractor_path),
+            "extractor_mtime_ns": self.extractor_mtime_ns,
+            "modwire_version": self.modwire_version,
+            "files_found": self.files_found,
+            "files_checked": self.files_checked,
+            "files_excluded": self.files_excluded,
+            "entries": [entry.to_dict() for entry in self.entries],
+        }
+
+    def fingerprint(self) -> str:
+        return manifest_fingerprint(self)
 
 
 def discover_sources(
@@ -40,7 +106,7 @@ def discover_sources(
         sources_root=sources_root,
         source_roots=source_roots,
     )
-    targets, files_found, files_excluded = _collect_extraction_targets(
+    targets, files_found, files_excluded = collect_extraction_targets(
         sources_root,
         extractor.file_extensions,
         normalized_exclusions,
