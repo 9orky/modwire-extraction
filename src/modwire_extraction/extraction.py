@@ -1,20 +1,11 @@
-from dataclasses import dataclass
 from pathlib import Path
 
 from .dependency import build_dependency_graph
-from .dependency.graph import DependencyGraph
 from .extractors import languages
-from .extractors.languages.base import SourceExtraction
+from .code import CodeMap, QueryableCodeMap
 
 
-@dataclass(frozen=True)
-class CodeMap:
-    language: str
-    extraction: SourceExtraction
-    dependency_graph: DependencyGraph
-
-
-class ModwireCodeMap:
+class ModwireExtraction:
     def __init__(self, root: Path):
         self._root = root.resolve()
 
@@ -42,3 +33,7 @@ class ModwireCodeMap:
             extraction=extraction,
             dependency_graph=dependency_graph,
         )
+
+    def generate_queryable_map(self, language: str) -> QueryableCodeMap:
+        code_map = self.generate_map(language)
+        return QueryableCodeMap(code_map=code_map)
