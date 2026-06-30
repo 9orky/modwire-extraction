@@ -20,6 +20,22 @@ Public data and query helpers are exported from:
 - `modwire_extraction.dependency` for dependency graph helpers.
 - `modwire_extraction.extractors` for extractor loading.
 
+## Compatibility notes
+
+The public Python import paths listed above are the supported API surface for
+1.0.0.
+
+Dependency graph edges use normalized import strings. Imports such as
+`domain/model/user` are not represented as the source ID
+`src/domain/model/user`.
+
+Serialized `CodeMap` JSON is intended for same-version interchange in 1.0.0.
+Do not treat the JSON shape as a cross-version compatibility contract yet.
+
+TypeScript and PHP helper build files are included as package data because
+they are part of the bundled extractor runtimes and reproducible maintenance
+path.
+
 ## Install
 
 ```bash

@@ -7,6 +7,7 @@ name = "modwire-extraction"
 version = "1.0.0"
 description = "Extraction implementation for modwire."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.8",
