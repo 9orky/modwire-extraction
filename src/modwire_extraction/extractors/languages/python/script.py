@@ -677,6 +677,24 @@ def code_line_count(content: str) -> int:
     )
 
 
+def empty_source_file(content: str) -> dict[str, object]:
+    return {
+        "imports": [],
+        "exports": [],
+        "classes": [],
+        "interfaces": [],
+        "types": [],
+        "abstract_classes": [],
+        "functions": [],
+        "values": [],
+        "callables": [],
+        "calls": [],
+        "line_count": len(content.splitlines()),
+        "code_line_count": code_line_count(content),
+        "public_symbol_count": 0,
+    }
+
+
 def import_join_key(import_path_value: str) -> str:
     return normalize_module_path(import_path_value).rsplit("/", 1)[0]
 
@@ -917,7 +935,10 @@ def collect_exports(
 
 def extract_file(path: Path, sources_root: Path, source_id: str | None = None) -> dict[str, object]:
     content = path.read_text(encoding="utf-8")
-    tree = ast.parse(content, filename=str(path))
+    try:
+        tree = ast.parse(content, filename=str(path))
+    except SyntaxError:
+        return empty_source_file(content)
     resolved_source_id = source_id or source_id_for_path(path, sources_root)
     class_nodes = [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
     classes = [

@@ -5,12 +5,65 @@ import pytest
 from modwire_extraction import ModwireExtraction
 from modwire_extraction.code import CodeMap
 from modwire_extraction.extractors.languages import load_extractor
+from modwire_extraction.extractors.languages.base import (
+    BatchConfig,
+    ExtractorRuntime,
+    SourceExtractor,
+)
 from modwire_extraction.extractors.source import SourceFile
 
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
 
 SOURCE_FILE_SHAPE = set(SourceFile.model_fields)
+
+
+class RecordingExtractor(SourceExtractor):
+    def __init__(self) -> None:
+        self.batch_sizes: list[int] = []
+
+    @property
+    def runtime(self) -> ExtractorRuntime:
+        return ExtractorRuntime(
+            language="recording",
+            file_extensions=(".recording",),
+            command=("unused",),
+            script_path=Path(__file__),
+        )
+
+    @property
+    def batch_config(self) -> BatchConfig:
+        return BatchConfig(
+            size=5,
+            parallel_threshold=3,
+            parallel_size=2,
+            max_workers=2,
+        )
+
+    def _extract_batch(
+        self,
+        root: Path,
+        source_paths: list[Path],
+    ) -> dict[str, SourceFile]:
+        self.batch_sizes.append(len(source_paths))
+        return {
+            self._source_id_for_path(root, source_path): SourceFile(
+                imports=[],
+                exports=[],
+                classes=[],
+                interfaces=[],
+                types=[],
+                abstract_classes=[],
+                functions=[],
+                values=[],
+                callables=[],
+                calls=[],
+                line_count=1,
+                code_line_count=1,
+                public_symbol_count=0,
+            )
+            for source_path in source_paths
+        }
 
 
 def _language_roots() -> list[Path]:
@@ -168,6 +221,82 @@ def test_discover_ignores_excluded_source_directories(tmp_path: Path) -> None:
     (ignored_root / "generated.py").write_text("def generated():\n    return None\n")
 
     assert ModwireExtraction(tmp_path).discover() == ()
+
+
+def test_source_extractor_uses_parallel_batch_config(tmp_path: Path) -> None:
+    for index in range(5):
+        (tmp_path / f"{index}.recording").write_text("source\n")
+
+    extractor = RecordingExtractor()
+    extraction = extractor.extract_source(tmp_path)
+
+    assert extraction.files_found == 5
+    assert set(extraction.files) == {"0", "1", "2", "3", "4"}
+    assert sorted(extractor.batch_sizes) == [1, 2, 2]
+
+
+def test_python_extraction_tolerates_syntax_error_files(tmp_path: Path) -> None:
+    source_path = tmp_path / "broken.py"
+    source_path.write_text("1syntax_error\n")
+
+    code_map = ModwireExtraction(tmp_path).generate_map("python")
+
+    assert code_map.extraction.files_found == 1
+    assert code_map.extraction.files["broken"].line_count == 1
+    assert code_map.extraction.files["broken"].public_symbol_count == 0
+    assert code_map.extraction.files["broken"].imports == []
+
+
+def test_typescript_extraction_tolerates_non_literal_import_specifiers(
+    tmp_path: Path,
+) -> None:
+    _skip_missing_runtime("typescript")
+    source_path = tmp_path / "broken.ts"
+    source_path.write_text(
+        "import { value } from moduleName;\n"
+        "for (const fn = () => value; false;) {}\n"
+        "export const ok = 1;\n"
+    )
+
+    code_map = ModwireExtraction(tmp_path).generate_map("typescript")
+
+    assert code_map.extraction.files_found == 1
+    assert code_map.extraction.files["broken"].imports == []
+    assert code_map.extraction.files["broken"].public_symbol_count == 1
+
+
+def test_php_extraction_tolerates_anonymous_class_construction(
+    tmp_path: Path,
+) -> None:
+    _skip_missing_runtime("php")
+    source_path = tmp_path / "anonymous.php"
+    source_path.write_text(
+        "<?php\n"
+        "class Factory {\n"
+        "    public function build(): object {\n"
+        "        return new class {};\n"
+        "    }\n"
+        "}\n"
+    )
+
+    code_map = ModwireExtraction(tmp_path).generate_map("php")
+
+    assert code_map.extraction.files_found == 1
+    assert code_map.extraction.files["anonymous"].classes[0].name == "Factory"
+    assert code_map.extraction.files["anonymous"].calls == []
+
+
+def test_php_extraction_tolerates_syntax_error_files(tmp_path: Path) -> None:
+    _skip_missing_runtime("php")
+    source_path = tmp_path / "broken.php"
+    source_path.write_text("<?php\nfunction broken(\n")
+
+    code_map = ModwireExtraction(tmp_path).generate_map("php")
+
+    assert code_map.extraction.files_found == 1
+    assert code_map.extraction.files["broken"].line_count == 3
+    assert code_map.extraction.files["broken"].public_symbol_count == 0
+    assert code_map.extraction.files["broken"].imports == []
 
 
 def test_missing_external_runtime_raises_stable_error(

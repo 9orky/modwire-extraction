@@ -35,6 +35,24 @@ function code_line_count_for_content(string $content): int {
     return $count;
 }
 
+function empty_source_file(string $content): array {
+    return [
+        'imports' => [],
+        'exports' => [],
+        'classes' => [],
+        'interfaces' => [],
+        'types' => [],
+        'abstract_classes' => [],
+        'functions' => [],
+        'values' => [],
+        'callables' => [],
+        'calls' => [],
+        'line_count' => line_count_for_content($content),
+        'code_line_count' => code_line_count_for_content($content),
+        'public_symbol_count' => 0,
+    ];
+}
+
 function source_id_for_path(string $path, string $sourcesRoot): string {
     $normalizedPath = str_replace('\\', '/', realpath($path) ?: $path);
     $normalizedRoot = rtrim(str_replace('\\', '/', realpath($sourcesRoot) ?: $sourcesRoot), '/');
@@ -253,9 +271,12 @@ function value_kind(?Expr $expr): string {
     return 'unknown';
 }
 
-function expr_name(Expr|Name|Node\Identifier|null $expr): string {
+function expr_name(Node|Name|string|null $expr): string {
     if ($expr instanceof Name || $expr instanceof Node\Identifier) {
         return node_name($expr);
+    }
+    if ($expr instanceof Stmt\Class_) {
+        return $expr->name !== null ? node_name($expr->name) : '';
     }
     if ($expr instanceof Expr\Variable) {
         return '$' . var_name($expr);
@@ -711,8 +732,7 @@ function extract_file(string $path, ?string $sourceId = null, ?string $sourcesRo
     try {
         $nodes = (new ParserFactory())->createForHostVersion()->parse($content) ?? [];
     } catch (Error $error) {
-        fwrite(STDERR, $error->getMessage() . "\n");
-        exit(1);
+        return empty_source_file($content);
     }
 
     $root = $sourcesRoot ?? dirname($path);

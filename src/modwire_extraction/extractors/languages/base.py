@@ -2,7 +2,9 @@ import abc
 import json
 import os
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from itertools import repeat
 from typing import Any, Literal, cast
 
 from pathlib import Path
@@ -85,16 +87,44 @@ class SourceExtractor(abc.ABC):
 
         source_paths, files_excluded = self._discover_source_files(resolved_root)
         files: dict[str, SourceFile] = {}
-        batch_size = max(1, self.batch_config.size)
+        batches = self._source_batches(source_paths)
 
-        for start in range(0, len(source_paths), batch_size):
-            batch_paths = source_paths[start : start + batch_size]
-            files.update(self._extract_batch(resolved_root, batch_paths))
+        if self._uses_parallel_batches(len(source_paths)):
+            max_workers = max(1, self.batch_config.max_workers)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                for extracted in executor.map(
+                    self._extract_batch,
+                    repeat(resolved_root),
+                    batches,
+                ):
+                    files.update(extracted)
+        else:
+            for batch_paths in batches:
+                files.update(self._extract_batch(resolved_root, batch_paths))
 
         return SourceExtraction(
             files=files,
             files_found=len(source_paths),
             files_excluded=files_excluded,
+        )
+
+    def _source_batches(self, source_paths: list[Path]) -> list[list[Path]]:
+        batch_size = self._batch_size(len(source_paths))
+        return [
+            source_paths[start : start + batch_size]
+            for start in range(0, len(source_paths), batch_size)
+        ]
+
+    def _batch_size(self, source_count: int) -> int:
+        if self._uses_parallel_batches(source_count) and self.batch_config.parallel_size:
+            return max(1, self.batch_config.parallel_size)
+        return max(1, self.batch_config.size)
+
+    def _uses_parallel_batches(self, source_count: int) -> bool:
+        return (
+            self.batch_config.parallel_threshold > 0
+            and source_count >= self.batch_config.parallel_threshold
+            and self.batch_config.max_workers > 1
         )
 
     def _discover_source_files(self, root: Path) -> tuple[list[Path], int]:

@@ -77,6 +77,17 @@ function normalizedImportPath(importPath, isRelative, filePath, sourcesRoot) {
     return withoutExtension(path.relative(sourcesRoot, absolutePath).split(path.sep).join('/')).replace(/^\/+|\/+$/g, '');
 }
 
+function moduleSpecifierValue(declaration) {
+    const specifier = declaration.compilerNode.moduleSpecifier;
+    if (
+        specifier === undefined
+        || (!ts.isStringLiteral(specifier) && !ts.isNoSubstitutionTemplateLiteral(specifier))
+    ) {
+        return null;
+    }
+    return specifier.text;
+}
+
 function endIndexForNode(node) {
     return Math.max(node.getStart(), node.getEnd() - 1);
 }
@@ -120,7 +131,7 @@ function isExported(node) {
 }
 
 function moduleVisibility(node) {
-    return isExported(node) ? 'public' : 'private';
+    return node !== undefined && isExported(node) ? 'public' : 'private';
 }
 
 function codeLineCount(content) {
@@ -128,6 +139,31 @@ function codeLineCount(content) {
         const trimmed = line.trim();
         return trimmed !== '' && !trimmed.startsWith('//');
     }).length;
+}
+
+function emptySourceFile(content) {
+    return {
+        imports: [],
+        exports: [],
+        classes: [],
+        interfaces: [],
+        types: [],
+        abstract_classes: [],
+        functions: [],
+        values: [],
+        callables: [],
+        calls: [],
+        line_count: content.split('\n').length,
+        code_line_count: codeLineCount(content),
+        public_symbol_count: 0,
+    };
+}
+
+function shouldReturnEmptySourceFile(error) {
+    if (error instanceof RangeError && error.message.includes('Maximum call stack size exceeded')) {
+        return true;
+    }
+    return error instanceof Error && error.message.startsWith('Debug Failure');
 }
 
 function callableId(sourceId, qualifiedName) {
@@ -366,6 +402,10 @@ function collectImports(sourceFile, filePath, sourcesRoot) {
     }
 
     for (const declaration of sourceFile.getImportDeclarations()) {
+        const importPath = moduleSpecifierValue(declaration);
+        if (importPath === null) {
+            continue;
+        }
         const symbols = [];
         const defaultImport = declaration.getDefaultImport();
         const namespaceImport = declaration.getNamespaceImport();
@@ -381,7 +421,7 @@ function collectImports(sourceFile, filePath, sourcesRoot) {
             symbols.push(importedSymbol(name, alias));
         }
         addImport(
-            declaration.getModuleSpecifierValue(),
+            importPath,
             symbols.length === 0 ? [importedSymbol('*', '*', { isStar: true })] : symbols,
             symbols.length === 0 ? 'module' : 'symbol',
         );
@@ -495,7 +535,7 @@ function collectExports(sourceFile, filePath, sourcesRoot) {
 
     for (const exportDeclaration of sourceFile.getExportDeclarations()) {
         statementId += 1;
-        const exportPath = exportDeclaration.getModuleSpecifierValue() || '';
+        const exportPath = moduleSpecifierValue(exportDeclaration) || '';
         const namedExports = exportDeclaration.getNamedExports();
         if (namedExports.length === 0 && exportPath) {
             addExport(exports, seen, sourceExport('*', 'unknown', {
@@ -1026,15 +1066,31 @@ function publicSymbolCount(exports) {
 
 function extractFile(filePath, sourcesRoot, sourceId = null) {
     const content = fs.readFileSync(filePath, 'utf8');
-    const sourceFile = parseSourceFile(path.resolve(filePath), content);
-    const lineStarts = buildLineStarts(content);
-    const resolvedSourceId = sourceId || sourceIdForPath(filePath, sourcesRoot);
-    const { classes, abstractClasses, classRanges } = collectClasses(sourceFile, lineStarts);
-    const exports = collectExports(sourceFile, filePath, sourcesRoot);
-    const callableGraph = collectCallableGraph(sourceFile, lineStarts, resolvedSourceId);
+    let sourceFile;
+    let lineStarts;
+    let resolvedSourceId;
+    let classes;
+    let abstractClasses;
+    let imports;
+    let exports;
+    let callableGraph;
+    try {
+        sourceFile = parseSourceFile(path.resolve(filePath), content);
+        lineStarts = buildLineStarts(content);
+        resolvedSourceId = sourceId || sourceIdForPath(filePath, sourcesRoot);
+        ({ classes, abstractClasses } = collectClasses(sourceFile, lineStarts));
+        imports = collectImports(sourceFile, filePath, sourcesRoot);
+        exports = collectExports(sourceFile, filePath, sourcesRoot);
+        callableGraph = collectCallableGraph(sourceFile, lineStarts, resolvedSourceId);
+    } catch (error) {
+        if (shouldReturnEmptySourceFile(error)) {
+            return emptySourceFile(content);
+        }
+        throw error;
+    }
 
     return {
-        imports: collectImports(sourceFile, filePath, sourcesRoot),
+        imports,
         exports,
         classes,
         interfaces: collectInterfaces(sourceFile, lineStarts),
