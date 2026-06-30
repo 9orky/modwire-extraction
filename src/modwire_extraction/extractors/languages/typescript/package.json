@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ts-morph": "^26.0.0",
+    "typescript": "^5.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.7",
+    "@vercel/ncc": "^0.38.3"
+  }
+}

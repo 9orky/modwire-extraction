@@ -8,3 +8,5 @@ dist/
 src/modwire/_version.py
 __pycache__/
 *.py[cod]
+src/modwire_extraction/extractors/languages/typescript/node_modules/
+src/modwire_extraction/extractors/languages/typescript/.ncc/

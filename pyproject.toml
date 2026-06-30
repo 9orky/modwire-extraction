@@ -37,9 +37,17 @@ where = ["src"]
 namespaces = true
 
 [tool.setuptools.package-data]
-"modwire_extraction.extractors.scripts" = [
-    "*.js",
+"modwire_extraction.extractors.languages.python" = [
+    "*.py",
+]
+"modwire_extraction.extractors.languages.php" = [
     "*.php",
+]
+"modwire_extraction.extractors.languages.typescript" = [
+    "*.js",
+    "*.json",
+    "*.mjs",
+    "*.ts",
 ]
 
 [tool.pytest.ini_options]
