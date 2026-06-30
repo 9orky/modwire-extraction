@@ -1,7 +1,6 @@
 import abc
 import json
 import os
-import shutil
 import subprocess
 from dataclasses import dataclass
 from typing import Any, Literal, cast
@@ -151,13 +150,6 @@ class SourceExtractor(abc.ABC):
             raise RuntimeError(
                 f"{runtime.language} extractor script is missing: {runtime.script_path}"
             )
-        executable = runtime.command[0]
-        if shutil.which(executable) is None:
-            raise RuntimeError(
-                f"{runtime.language} extractor runtime is not available on PATH: "
-                f"{executable}"
-            )
-
         paths_by_source_id = {
             self._source_id_for_path(root, source_path): str(source_path)
             for source_path in source_paths

@@ -1,3 +1,5 @@
+import shutil
+
 from .base import SourceExtractor
 
 from .php.source import PhpExtractor
@@ -24,5 +26,17 @@ def load_extractor(language: str) -> SourceExtractor:
 
     if language not in _instances:
         _instances[language] = _map[language]()
-    
-    return _instances[language]
+
+    extractor = _instances[language]
+    _ensure_runtime_command_available(extractor)
+    return extractor
+
+
+def _ensure_runtime_command_available(extractor: SourceExtractor) -> None:
+    runtime = extractor.runtime
+    executable = runtime.command[0]
+    if shutil.which(executable) is None:
+        raise RuntimeError(
+            f"{runtime.language} extractor runtime is not available on PATH: "
+            f"{executable}"
+        )

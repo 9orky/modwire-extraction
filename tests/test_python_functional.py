@@ -1,20 +1,14 @@
-import shutil
 from pathlib import Path
 
 import pytest
 
 from modwire_extraction import ModwireExtraction
 from modwire_extraction.code import CodeMap
+from modwire_extraction.extractors.languages import load_extractor
 from modwire_extraction.extractors.source import SourceFile
 
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
-
-REQUIRED_RUNTIME = {
-    "php": "php",
-    "python": None,
-    "typescript": "node",
-}
 
 SOURCE_FILE_SHAPE = set(SourceFile.model_fields)
 
@@ -24,9 +18,12 @@ def _language_roots() -> list[Path]:
 
 
 def _skip_missing_runtime(language: str) -> None:
-    runtime = REQUIRED_RUNTIME[language]
-    if runtime is not None and shutil.which(runtime) is None:
-        pytest.skip(f"{runtime} is required for {language} extraction")
+    try:
+        load_extractor(language)
+    except RuntimeError as error:
+        if "extractor runtime is not available on PATH" in str(error):
+            pytest.skip(str(error))
+        raise
 
 
 @pytest.mark.parametrize("root", _language_roots(), ids=lambda path: path.name)
@@ -181,7 +178,7 @@ def test_missing_external_runtime_raises_stable_error(
     source_root.mkdir()
     (source_root / "controller.ts").write_text("export const value = 1;\n")
     monkeypatch.setattr(
-        "modwire_extraction.extractors.languages.base.shutil.which",
+        "modwire_extraction.extractors.languages.loader.shutil.which",
         lambda executable: None,
     )
 
