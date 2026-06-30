@@ -1,5 +1,9 @@
 import abc
 
+from pathlib import Path
+
+from pydantic import BaseModel
+
 from ..source import SourceFile
 
 
@@ -17,7 +21,7 @@ class BatchConfig:
     output_format: str = "json"
 
 
-class ExtractorRuntime:
+class ExtractorRuntime():
     language: str
     file_extensions: tuple[str, ...]
     command: str
@@ -33,3 +37,6 @@ class SourceExtractor(abc.ABC):
     @abc.abstractmethod
     def batch_config(self) -> BatchConfig:
         raise NotImplementedError
+
+    def extract_source(self, root: Path) -> SourceExtraction:
+        pass

@@ -24,9 +24,24 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
     "build>=1.2",
+    "pyright>=1.1",
     "pytest>=8",
     "twine>=5",
 ]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1",
+]
+
+[tool.pyright]
+include = ["src", "typecheck"]
+extraPaths = ["src"]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+reportAbstractUsage = "error"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
