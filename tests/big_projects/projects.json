@@ -1,0 +1,65 @@
+{
+  "github": {
+    "host": "github.com",
+    "scheme": "https",
+    "clone_root": ".dev/big_projects",
+    "clone": {
+      "depth": 1,
+      "single_branch": true,
+      "tags": false
+    }
+  },
+  "projects": {
+    "python": [
+      {
+        "id": "transformers",
+        "owner": "huggingface",
+        "repo": "transformers"
+      },
+      {
+        "id": "django",
+        "owner": "django",
+        "repo": "django"
+      },
+      {
+        "id": "ansible",
+        "owner": "ansible",
+        "repo": "ansible"
+      }
+    ],
+    "typescript": [
+      {
+        "id": "vscode",
+        "owner": "microsoft",
+        "repo": "vscode"
+      },
+      {
+        "id": "typescript",
+        "owner": "microsoft",
+        "repo": "TypeScript"
+      },
+      {
+        "id": "angular",
+        "owner": "angular",
+        "repo": "angular"
+      }
+    ],
+    "php": [
+      {
+        "id": "laravel",
+        "owner": "laravel",
+        "repo": "framework"
+      },
+      {
+        "id": "symfony",
+        "owner": "symfony",
+        "repo": "symfony"
+      },
+      {
+        "id": "composer",
+        "owner": "composer",
+        "repo": "composer"
+      }
+    ]
+  }
+}
