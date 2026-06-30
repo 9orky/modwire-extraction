@@ -1,29 +1,42 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from ..extractors.source import SourceFile
 
 
-@dataclass(frozen=True)
-class Node:
+class Node(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     id: str
     kind: str = "file"
 
 
-@dataclass(frozen=True)
-class Edge:
+class Edge(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     from_id: str
     to_id: str
     kind: str = "import"
 
 
-@dataclass
-class DependencyGraph:
-    nodes: dict[str, Node] = field(default_factory=dict)
-    edges: list[Edge] = field(default_factory=list)
-    _outgoing_by_node: dict[str, list[Edge]] = field(default_factory=dict)
-    _incoming_by_node: dict[str, list[Edge]] = field(default_factory=dict)
+class DependencyGraph(BaseModel):
+    nodes: dict[str, Node] = Field(default_factory=dict)
+    edges: list[Edge] = Field(default_factory=list)
+    _outgoing_by_node: dict[str, list[Edge]] = PrivateAttr(default_factory=dict)
+    _incoming_by_node: dict[str, list[Edge]] = PrivateAttr(default_factory=dict)
+
+    def model_post_init(self, __context: Any) -> None:
+        self._rebuild_indexes()
+
+    def _rebuild_indexes(self) -> None:
+        self._outgoing_by_node = {node_id: [] for node_id in self.nodes}
+        self._incoming_by_node = {node_id: [] for node_id in self.nodes}
+        for edge in self.edges:
+            self._outgoing_by_node.setdefault(edge.from_id, []).append(edge)
+            self._incoming_by_node.setdefault(edge.to_id, []).append(edge)
 
     def add_node(self, node_id: str, *, kind: str = "file") -> None:
         self.nodes.setdefault(node_id, Node(id=node_id, kind=kind))

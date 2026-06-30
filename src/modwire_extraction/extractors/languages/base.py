@@ -7,14 +7,20 @@ from typing import Any, Literal, cast
 
 from pathlib import Path
 
+from pydantic import BaseModel, ConfigDict
+
 from ..source import SourceFile
 
 
-@dataclass(frozen=True)
-class SourceExtraction:
+class SourceExtraction(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     files: dict[str, SourceFile]
     files_found: int
     files_excluded: int
+
+    def files_dict(self) -> dict[str, SourceFile]:
+        return dict(self.files)
 
 
 @dataclass(frozen=True)
