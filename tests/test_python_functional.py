@@ -74,6 +74,97 @@ def test_public_api_reads_each_language_project_with_same_shape(root: Path) -> N
     )
 
 
+def test_queryable_code_map_exposes_report_query_surfaces() -> None:
+    queryable_map = ModwireExtraction(FIXTURE_ROOT / "python").generate_queryable_map(
+        "python"
+    )
+
+    assert queryable_map.source_ids() == (
+        "src/application/use_cases/activate",
+        "src/domain/model/user",
+        "src/domain/services/policy",
+        "src/interfaces/http/controller",
+    )
+    assert queryable_map.has_source_file("src/interfaces/http/controller")
+    assert queryable_map.files().count() == queryable_map.source_files().count()
+
+    controller = queryable_map.source_file("src/interfaces/http/controller")
+    assert controller is not None
+    assert controller.file.classes[0].name == "ActivationController"
+
+    controller_class = (
+        queryable_map.classes()
+        .where_equal(lambda result: result.item.name, "ActivationController")
+        .first()
+    )
+    assert controller_class is not None
+    assert controller_class.source_id == "src/interfaces/http/controller"
+
+    activation_label = (
+        queryable_map.functions()
+        .where_equal(lambda result: result.item.name, "activation_label")
+        .first()
+    )
+    assert activation_label is not None
+    assert activation_label.source_id == "src/application/use_cases/activate"
+
+    domain_model_imports = queryable_map.imports().where_equal(
+        lambda result: result.item.normalized_path,
+        "domain/model/user",
+    )
+    assert domain_model_imports.count() == 3
+    assert queryable_map.exports().count() == 8
+
+    policy_method = (
+        queryable_map.callables()
+        .where_equal(lambda result: result.item.qualified_name, "ActivationPolicy.allows")
+        .first()
+    )
+    assert policy_method is not None
+    assert policy_method.source_id == "src/domain/services/policy"
+
+    resolved_call = (
+        queryable_map.calls()
+        .where_equal(lambda result: result.item.resolution, "resolved")
+        .first()
+    )
+    assert resolved_call is not None
+    assert (
+        resolved_call.item.target_callable_id
+        == "src/domain/services/policy::can_activate"
+    )
+
+    controller_activation_edges = queryable_map.dependencies_between(
+        "src/interfaces/http/controller",
+        "application/use_cases/activate",
+    )
+    assert controller_activation_edges.count() == 2
+    assert (
+        queryable_map.outgoing_dependencies("src/interfaces/http/controller").count()
+        == 4
+    )
+    assert queryable_map.incoming_dependencies("domain/model/user").count() == 3
+    assert queryable_map.dependency_edges().count() == 10
+    assert queryable_map.tracked_dependency_edges().count() == 0
+    assert queryable_map.external_dependency_edges().count() == 10
+
+    source_node = (
+        queryable_map.dependency_nodes()
+        .where_equal(lambda result: result.node_id, "src/interfaces/http/controller")
+        .first()
+    )
+    assert source_node is not None
+    assert source_node.file == controller.file
+
+    external_node = (
+        queryable_map.dependency_nodes()
+        .where_equal(lambda result: result.node_id, "json")
+        .first()
+    )
+    assert external_node is not None
+    assert external_node.file is None
+
+
 @pytest.mark.parametrize("root", _language_roots(), ids=lambda path: path.name)
 def test_code_map_serialization_round_trips_through_pydantic(root: Path) -> None:
     language = root.name
