@@ -1,8 +1,8 @@
 from .base import SourceExtractor
 
-from .php import PhpExtractor
-from .python import PythonExtractor
-from .typescript import TypeScriptExtractor
+from .languages.php.source import PhpExtractor
+from .languages.python.source import PythonExtractor
+from .languages.typescript.source import TypeScriptExtractor
 
 
 _map: dict[str, type[SourceExtractor]] = {

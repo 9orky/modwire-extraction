@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from posixpath import normpath
 from pathlib import Path
 
-from .source import SourceExport, SourceImport
-from .base import SourceExtraction, SourceExtractor, _extract_files
+from ...source import SourceExport, SourceImport
+from ...base import SourceExtraction, SourceExtractor, _extract_files
 
 
 @dataclass(frozen=True)
