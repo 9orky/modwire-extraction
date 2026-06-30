@@ -1,0 +1,3 @@
+include README.md
+recursive-include src/modwire_extraction/extractors/scripts *.js *.php
+recursive-include tests/fixtures *.py

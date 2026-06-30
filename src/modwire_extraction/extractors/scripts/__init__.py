@@ -1,0 +1,2 @@
+"""Subprocess extractor script resources."""
+

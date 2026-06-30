@@ -1,0 +1,10 @@
+.dev/
+.pytest_cache/
+.ruff_cache/
+.venv/
+build/
+dist/
+*.egg-info/
+src/modwire/_version.py
+__pycache__/
+*.py[cod]
