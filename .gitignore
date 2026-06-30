@@ -10,3 +10,5 @@ __pycache__/
 *.py[cod]
 src/modwire_extraction/extractors/languages/typescript/node_modules/
 src/modwire_extraction/extractors/languages/typescript/.ncc/
+src/modwire_extraction/extractors/languages/php/vendor/
+src/modwire_extraction/extractors/languages/php/script.phar

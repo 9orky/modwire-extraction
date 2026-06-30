@@ -1,4 +1,5 @@
 include README.md
-recursive-include src/modwire_extraction/extractors/languages *.js *.json *.mjs *.php *.py *.ts
+recursive-include src/modwire_extraction/extractors/languages *.js *.json *.lock *.mjs *.php *.py *.ts
 recursive-exclude src/modwire_extraction/extractors/languages/typescript/node_modules *
+recursive-exclude src/modwire_extraction/extractors/languages/php/vendor *
 recursive-include tests/fixtures *.py

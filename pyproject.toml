@@ -42,6 +42,8 @@ namespaces = true
 ]
 "modwire_extraction.extractors.languages.php" = [
     "*.php",
+    "*.json",
+    "*.lock",
 ]
 "modwire_extraction.extractors.languages.typescript" = [
     "*.js",
