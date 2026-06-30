@@ -23,6 +23,7 @@ if (assetNames.length > 0) {
   throw new Error(`NCC emitted unsupported sidecar assets: ${assetNames.join(', ')}`);
 }
 
-const bundledCode = code.startsWith('#!') ? code : `#!/usr/bin/env node\n${code}`;
+const bundledCode = (code.startsWith('#!') ? code : `#!/usr/bin/env node\n${code}`)
+  .replace(/\r\n/g, '\n');
 await writeFile(output, bundledCode);
 await chmod(output, 0o755);
