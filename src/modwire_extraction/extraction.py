@@ -13,11 +13,7 @@ class ModwireExtraction:
         discovered: list[str] = []
         for language in languages.get_supported_languages():
             extractor = languages.load_extractor(language)
-            extensions = extractor.runtime.file_extensions
-            if any(
-                path.is_file() and path.suffix.lower() in extensions
-                for path in self._root.rglob("*")
-            ):
+            if extractor.has_source_files(self._root):
                 discovered.append(language)
         return tuple(discovered)
 

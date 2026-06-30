@@ -165,6 +165,33 @@ def test_queryable_code_map_exposes_report_query_surfaces() -> None:
     assert external_node.file is None
 
 
+def test_discover_ignores_excluded_source_directories(tmp_path: Path) -> None:
+    ignored_root = tmp_path / "ignored"
+    ignored_root.mkdir()
+    (ignored_root / "generated.py").write_text("def generated():\n    return None\n")
+
+    assert ModwireExtraction(tmp_path).discover() == ()
+
+
+def test_missing_external_runtime_raises_stable_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_root = tmp_path / "src"
+    source_root.mkdir()
+    (source_root / "controller.ts").write_text("export const value = 1;\n")
+    monkeypatch.setattr(
+        "modwire_extraction.extractors.languages.base.shutil.which",
+        lambda executable: None,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="typescript extractor runtime is not available on PATH: node",
+    ):
+        ModwireExtraction(tmp_path).generate_map("typescript")
+
+
 @pytest.mark.parametrize("root", _language_roots(), ids=lambda path: path.name)
 def test_code_map_serialization_round_trips_through_pydantic(root: Path) -> None:
     language = root.name

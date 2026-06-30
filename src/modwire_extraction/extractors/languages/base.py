@@ -1,6 +1,7 @@
 import abc
 import json
 import os
+import shutil
 import subprocess
 from dataclasses import dataclass
 from typing import Any, Literal, cast
@@ -69,6 +70,14 @@ class SourceExtractor(abc.ABC):
     @abc.abstractmethod
     def batch_config(self) -> BatchConfig:
         raise NotImplementedError
+
+    def has_source_files(self, root: Path) -> bool:
+        resolved_root = root.resolve()
+        if not resolved_root.is_dir():
+            raise ValueError(f"Source root is not a directory: {root}")
+
+        source_paths, _ = self._discover_source_files(resolved_root)
+        return bool(source_paths)
 
     def extract_source(self, root: Path) -> SourceExtraction:
         resolved_root = root.resolve()
@@ -141,6 +150,12 @@ class SourceExtractor(abc.ABC):
         if not runtime.script_path.is_file():
             raise RuntimeError(
                 f"{runtime.language} extractor script is missing: {runtime.script_path}"
+            )
+        executable = runtime.command[0]
+        if shutil.which(executable) is None:
+            raise RuntimeError(
+                f"{runtime.language} extractor runtime is not available on PATH: "
+                f"{executable}"
             )
 
         paths_by_source_id = {

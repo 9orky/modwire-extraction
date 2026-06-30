@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "modwire-extraction"
-version = "0.0.0"
+version = "1.0.0"
 description = "Extraction implementation for modwire."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,13 +13,18 @@ dependencies = [
 ]
 keywords = ["code-analysis", "dependency-graph", "extraction"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
+
+[project.urls]
+Homepage = "https://github.com/9orky/modwire-extraction"
+Repository = "https://github.com/9orky/modwire-extraction"
+Issues = "https://github.com/9orky/modwire-extraction/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -35,7 +40,7 @@ dev = [
 ]
 
 [tool.pyright]
-include = ["src", "typecheck"]
+include = ["src"]
 extraPaths = ["src"]
 venvPath = "."
 venv = ".venv"

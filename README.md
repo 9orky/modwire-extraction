@@ -2,17 +2,33 @@
 
 Extraction implementation for Modwire.
 
-The package is split into three public packages:
+The primary API starts from `ModwireExtraction`:
 
-- `modwire_extraction.extractors` returns source-file extraction results.
-- `modwire_extraction.graph` builds dependency graphs from extracted source files.
-- `modwire_extraction.code_map` composes extraction and graph data into a `CodeMap`.
+```python
+from pathlib import Path
+
+from modwire_extraction import ModwireExtraction
+
+queryable_map = ModwireExtraction(Path("src")).generate_queryable_map("python")
+print(queryable_map.source_ids())
+```
+
+Public data and query helpers are exported from:
+
+- `modwire_extraction` for `ModwireExtraction`.
+- `modwire_extraction.code` for `CodeMap`, `QueryableCodeMap`, and query result types.
+- `modwire_extraction.dependency` for dependency graph helpers.
+- `modwire_extraction.extractors` for extractor loading.
 
 ## Install
 
 ```bash
 pip install modwire-extraction
 ```
+
+Python extraction works with the active Python interpreter. TypeScript,
+JavaScript, TSX, and JSX extraction require `node` on `PATH`. PHP extraction
+requires `php` on `PATH`.
 
 ## Development
 
@@ -23,9 +39,18 @@ python -m build
 twine check dist/*
 ```
 
-Before publishing, choose the release version in `pyproject.toml`, build a
-fresh distribution, and upload it with:
+Before publishing manually, choose the release version in `pyproject.toml`,
+remove stale local artifacts, build a fresh distribution, and upload only the
+expected version files:
 
 ```bash
-twine upload dist/*
+rm -rf build dist src/*.egg-info
+python -m build
+twine check dist/*
+twine upload dist/modwire_extraction-1.0.0*
 ```
+
+The preferred release path is GitHub Actions. Publish a GitHub Release tagged
+`vX.Y.Z` or `X.Y.Z` after configuring PyPI Trusted Publishing for workflow
+`workflow.yml` and GitHub Environment `pypi`. The release workflow sets the
+package version from the release tag before building.
