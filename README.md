@@ -55,18 +55,19 @@ python -m build
 twine check dist/*
 ```
 
-Before publishing manually, choose the release version in `pyproject.toml`,
-remove stale local artifacts, build a fresh distribution, and upload only the
-expected version files:
+For local verification, build a fresh distribution from the current Git state:
 
 ```bash
-rm -rf build dist src/*.egg-info
 python -m build
 twine check dist/*
-twine upload dist/modwire_extraction-1.0.0*
 ```
 
-The preferred release path is GitHub Actions. Publish a GitHub Release tagged
-`vX.Y.Z` or run the `Release` workflow manually for that tag after configuring
-PyPI Trusted Publishing for workflow `release.yml` and GitHub Environment
-`pypi`.
+Releases use strict SemVer tags. Create and push the tag first, then publish its
+GitHub Release. That release invokes the shared build and asset workflows before
+trusted publishing sends the same distributions to PyPI.
+
+```sh
+git tag -a v1.0.3 -m "v1.0.3"
+git push origin v1.0.3
+gh release create v1.0.3 --verify-tag --generate-notes --title v1.0.3
+```

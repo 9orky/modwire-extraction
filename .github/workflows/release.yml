@@ -2,208 +2,39 @@ name: Release
 
 on:
   release:
-    types:
-      - published
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Release tag to build and publish, for example v1.0.0.
-        required: true
-        type: string
+    types: [published]
 
 permissions:
   contents: read
 
 jobs:
   build:
-    name: Build and verify release artifacts
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    uses: 9orky/modwire/.github/workflows/python-release-build.yml@workflows-v1
+    with:
+      release-tag: ${{ github.event.release.tag_name }}
+      python-version: "3.11"
 
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check out release tag
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          git fetch --force --tags origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
-          git -c advice.detachedHead=false checkout --force "refs/tags/${RELEASE_TAG}"
-          git clean -ffdx
-
-      - name: Verify release checkout
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          tag_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
-          head_sha="$(git rev-parse HEAD)"
-
-          echo "Release tag: $RELEASE_TAG"
-          echo "Tag commit: $tag_sha"
-          echo "HEAD commit: $head_sha"
-          git describe --tags --dirty --always
-
-          if [ "$head_sha" != "$tag_sha" ]; then
-            echo "Release checkout mismatch: HEAD is not the release tag commit." >&2
-            exit 1
-          fi
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Set package version from release tag
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          python - <<'PY'
-          import os
-          import re
-          from pathlib import Path
-
-          tag = os.environ["RELEASE_TAG"]
-          version = tag.removeprefix("v")
-          if not re.fullmatch(
-              r"(0|[1-9]\d*)\."
-              r"(0|[1-9]\d*)\."
-              r"(0|[1-9]\d*)"
-              r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
-              r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?",
-              version,
-          ):
-              raise SystemExit(f"Invalid release tag version: {tag}")
-
-          pyproject_path = Path("pyproject.toml")
-          lines = pyproject_path.read_text(encoding="utf-8").splitlines()
-          in_project = False
-          updated = False
-          for index, line in enumerate(lines):
-              if line.strip() == "[project]":
-                  in_project = True
-                  continue
-              if in_project and line.startswith("["):
-                  break
-              if in_project and line.startswith("version = "):
-                  lines[index] = f'version = "{version}"'
-                  updated = True
-                  break
-
-          if not updated:
-              raise SystemExit("Could not find [project] version in pyproject.toml")
-
-          pyproject_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-          print(f"Package version set from release tag: {version}")
-          PY
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: src/modwire_extraction/extractors/languages/typescript/package-lock.json
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.3"
-          tools: composer
-
-      - name: Clean packaging artifacts
-        run: rm -rf build dist src/*.egg-info
-
-      - name: Install package and release tooling
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
-
-      - name: Check TypeScript extractor bundle
-        working-directory: src/modwire_extraction/extractors/languages/typescript
-        run: |
-          npm ci
-          npm run check
-          npm run build
-
-      - name: Check PHP extractor bundle
-        working-directory: src/modwire_extraction/extractors/languages/php
-        run: |
-          composer install --no-interaction --no-progress --prefer-dist
-          composer check
-          composer build
-
-      - name: Verify generated TypeScript bundle is committed
-        run: git diff --exit-code -- src/modwire_extraction/extractors/languages/typescript/script.js
-
-      - name: Run tests
-        run: pytest
-
-      - name: Verify release tag matches package version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          python -c "import os; import importlib.metadata as metadata; tag = os.environ['RELEASE_TAG']; version = tag.removeprefix('v'); package_version = metadata.version('modwire-extraction'); assert package_version == version, 'Package version %s does not match release tag %s' % (package_version, tag)"
-
-      - name: Build distributions
-        run: python -m build --outdir dist
-
-      - name: Check distribution metadata
-        run: python -m twine check dist/*
-
-      - name: Verify distribution version matches release tag
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          python -c "import os, pathlib; version = os.environ['RELEASE_TAG'].removeprefix('v'); expected = {f'modwire_extraction-{version}.tar.gz', f'modwire_extraction-{version}-py3-none-any.whl'}; actual = {path.name for path in pathlib.Path('dist').iterdir()}; assert actual == expected, f'Distribution files do not match release tag {version}: {sorted(actual)}'"
-
-      - name: Upload distribution artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
-          if-no-files-found: error
-
-  github-release-assets:
-    name: Attach artifacts to GitHub release
-    if: github.event_name == 'release'
+  publish-github-assets:
     needs: build
-    runs-on: ubuntu-latest
+    uses: 9orky/modwire/.github/workflows/python-release-assets.yml@workflows-v1
+    with:
+      release-tag: ${{ github.event.release.tag_name }}
     permissions:
       contents: write
 
-    steps:
-      - name: Download distribution artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
-
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*
-
   publish-pypi:
-    name: Publish to PyPI
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && !github.event.release.prerelease)
-    needs: build
+    needs: [build, publish-github-assets]
     runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/project/modwire-extraction/
     permissions:
       id-token: write
-
     steps:
-      - name: Download distribution artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: python-package-distributions
           path: dist/
-
-      - name: Publish to PyPI with Trusted Publishing
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true

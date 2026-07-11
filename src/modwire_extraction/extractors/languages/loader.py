@@ -1,11 +1,9 @@
 import shutil
 
 from .base import SourceExtractor
-
 from .php.source import PhpExtractor
 from .python.source import PythonExtractor
 from .typescript.source import TypeScriptExtractor
-
 
 _map: dict[str, type[SourceExtractor]] = {
     "python": PythonExtractor,

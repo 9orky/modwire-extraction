@@ -58,7 +58,7 @@ vary by environment.
 ## Release process
 
 1. Ensure the changelog or release notes describe user-visible changes.
-2. Create the release tag as `vX.Y.Z` or `X.Y.Z`.
+2. Create and push an annotated release tag as strict SemVer `vX.Y.Z`.
 3. Remove old local build artifacts:
 
    ```bash
@@ -74,12 +74,12 @@ vary by environment.
 
 5. Create and publish a GitHub Release for the version tag.
 
-Publishing to PyPI is handled by `.github/workflows/workflow.yml` from the
-`pypi` GitHub Environment using PyPI Trusted Publishing. Release builds set the
-package version from the GitHub Release tag. Configure the PyPI trusted publisher
+Publishing to PyPI is handled by `.github/workflows/release.yml` from the
+`pypi` GitHub Environment using PyPI Trusted Publishing. Release builds derive the
+package version from the existing GitHub Release tag. Configure the PyPI trusted publisher
 with:
 
 - Repository owner: `9orky`
 - Repository name: `modwire-extraction`
-- Workflow name: `workflow.yml`
+- Workflow name: `release.yml`
 - Environment name: `pypi`

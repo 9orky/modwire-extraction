@@ -8,7 +8,6 @@ from .query import (
     SourceItemResult,
 )
 
-
 __all__ = [
     "CodeMap",
     "DependencyEdgeResult",

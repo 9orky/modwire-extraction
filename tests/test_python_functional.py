@@ -12,7 +12,6 @@ from modwire_extraction.extractors.languages.base import (
 )
 from modwire_extraction.extractors.source import SourceFile
 
-
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
 
 SOURCE_FILE_SHAPE = set(SourceFile.model_fields)
