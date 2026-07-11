@@ -22,15 +22,15 @@ Public data and query helpers are exported from:
 
 ## Compatibility notes
 
-The public Python import paths listed above are the supported API surface for
-1.0.0.
+Version 2 uses extension-bearing physical file IDs, separate logical module
+IDs, and dependency edges resolved to tracked files. Original and normalized
+import specifiers remain available with an explicit resolution state.
 
-Dependency graph edges use normalized import strings. Imports such as
-`domain/model/user` are not represented as the source ID
-`src/domain/model/user`.
+See [Migrating to modwire-extraction 2](https://github.com/modwire/modwire-extraction/blob/main/docs/migration-2.md)
+for the complete breaking-contract guide.
 
-Serialized `CodeMap` JSON is intended for same-version interchange in 1.0.0.
-Do not treat the JSON shape as a cross-version compatibility contract yet.
+Serialized `CodeMap` JSON remains a same-major interchange contract. Regenerate
+1.x maps before loading them with version 2.
 
 TypeScript and PHP helper build files are included as package data because
 they are part of the bundled extractor runtimes and reproducible maintenance
@@ -67,7 +67,7 @@ GitHub Release. That release invokes the shared build and asset workflows before
 trusted publishing sends the same distributions to PyPI.
 
 ```sh
-git tag -a v1.0.3 -m "v1.0.3"
-git push origin v1.0.3
-gh release create v1.0.3 --verify-tag --generate-notes --title v1.0.3
+git tag -a v2.0.0 -m "v2.0.0"
+git push origin v2.0.0
+gh release create v2.0.0 --verify-tag --generate-notes --title v2.0.0
 ```

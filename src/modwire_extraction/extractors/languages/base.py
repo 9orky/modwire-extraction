@@ -10,17 +10,26 @@ from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict
 
+from ...dependency.resolution import resolve_imports
+from ...identity import (
+    DuplicateIdentityError,
+    FileId,
+    ModuleId,
+    file_id_for_path,
+    module_id_for_path,
+)
 from ..source import SourceFile
 
 
 class SourceExtraction(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    files: dict[str, SourceFile]
+    files: dict[FileId, SourceFile]
+    modules: dict[ModuleId, FileId]
     files_found: int
     files_excluded: int
 
-    def files_dict(self) -> dict[str, SourceFile]:
+    def files_dict(self) -> dict[FileId, SourceFile]:
         return dict(self.files)
 
 
@@ -85,7 +94,7 @@ class SourceExtractor(abc.ABC):
             raise ValueError(f"Source root is not a directory: {root}")
 
         source_paths, files_excluded = self._discover_source_files(resolved_root)
-        files: dict[str, SourceFile] = {}
+        files: dict[FileId, SourceFile] = {}
         batches = self._source_batches(source_paths)
 
         if self._uses_parallel_batches(len(source_paths)):
@@ -96,13 +105,31 @@ class SourceExtractor(abc.ABC):
                     repeat(resolved_root),
                     batches,
                 ):
-                    files.update(extracted)
+                    self._merge_files(files, extracted)
         else:
             for batch_paths in batches:
-                files.update(self._extract_batch(resolved_root, batch_paths))
+                self._merge_files(
+                    files,
+                    self._extract_batch(resolved_root, batch_paths),
+                )
+
+        modules: dict[ModuleId, FileId] = {}
+        for file_id, source_file in files.items():
+            existing = modules.get(source_file.module_id)
+            if existing is not None:
+                raise DuplicateIdentityError(
+                    "module",
+                    source_file.module_id,
+                    existing,
+                    file_id,
+                )
+            modules[source_file.module_id] = file_id
+
+        files = resolve_imports(files)
 
         return SourceExtraction(
             files=files,
+            modules=modules,
             files_found=len(source_paths),
             files_excluded=files_excluded,
         )
@@ -170,7 +197,11 @@ class SourceExtractor(abc.ABC):
     def _is_excluded_dir(self, name: str) -> bool:
         return name in self.excluded_dir_names or name.startswith(".")
 
-    def _extract_batch(self, root: Path, source_paths: list[Path]) -> dict[str, SourceFile]:
+    def _extract_batch(
+        self,
+        root: Path,
+        source_paths: list[Path],
+    ) -> dict[FileId, SourceFile]:
         if not source_paths:
             return {}
 
@@ -180,7 +211,7 @@ class SourceExtractor(abc.ABC):
                 f"{runtime.language} extractor script is missing: {runtime.script_path}"
             )
         paths_by_source_id = {
-            self._source_id_for_path(root, source_path): str(source_path)
+            file_id_for_path(root, source_path): str(source_path)
             for source_path in source_paths
         }
         command = [
@@ -192,25 +223,47 @@ class SourceExtractor(abc.ABC):
         if self.batch_config.output_format == "jsonl":
             command.append("--jsonl")
 
-        result = subprocess.run(
+        completed = subprocess.run(
             command,
             input=json.dumps(paths_by_source_id),
             text=True,
             capture_output=True,
             check=False,
         )
-        if result.returncode != 0:
-            message = result.stderr.strip() or result.stdout.strip()
+        if completed.returncode != 0:
+            message = completed.stderr.strip() or completed.stdout.strip()
             raise RuntimeError(
                 f"{runtime.language} extractor failed with exit code "
-                f"{result.returncode}: {message}"
+                f"{completed.returncode}: {message}"
             )
 
-        extracted = self._parse_batch_output(result.stdout)
-        return {
-            source_id: SourceFile.model_validate(source_file)
-            for source_id, source_file in extracted.items()
+        extracted = self._parse_batch_output(completed.stdout)
+        source_paths_by_id = {
+            file_id_for_path(root, source_path): source_path
+            for source_path in source_paths
         }
+        extracted_files: dict[FileId, SourceFile] = {}
+        for raw_file_id, source_file in extracted.items():
+            file_id = FileId(raw_file_id)
+            source_path = source_paths_by_id[file_id]
+            extracted_files[file_id] = SourceFile.model_validate(
+                {
+                    **source_file,
+                    "file_id": file_id,
+                    "module_id": module_id_for_path(root, source_path),
+                }
+            )
+        return extracted_files
+
+    @staticmethod
+    def _merge_files(
+        files: dict[FileId, SourceFile],
+        extracted: dict[FileId, SourceFile],
+    ) -> None:
+        for file_id, source_file in extracted.items():
+            if file_id in files:
+                raise DuplicateIdentityError("file", file_id, file_id, file_id)
+            files[file_id] = source_file
 
     def _parse_batch_output(self, output: str) -> dict[str, Any]:
         if self.batch_config.output_format == "jsonl":
@@ -235,6 +288,5 @@ class SourceExtractor(abc.ABC):
             raise RuntimeError("Extractor returned invalid JSON batch output.")
         return cast(dict[str, Any], parsed)
 
-    def _source_id_for_path(self, root: Path, path: Path) -> str:
-        relative_path = path.relative_to(root)
-        return relative_path.with_suffix("").as_posix().strip("/")
+    def _source_id_for_path(self, root: Path, path: Path) -> FileId:
+        return file_id_for_path(root, path)

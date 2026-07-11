@@ -18,6 +18,7 @@ from ..extractors.source import (
     SourceType,
     SourceValue,
 )
+from ..identity import FileId
 from .code_map import CodeMap
 
 T = TypeVar("T")
@@ -74,20 +75,20 @@ class QueryBuilder(Generic[T]):
 
 @dataclass(frozen=True)
 class SourceFileResult:
-    source_id: str
+    source_id: FileId
     file: SourceFile
 
 
 @dataclass(frozen=True)
 class SourceItemResult(Generic[SourceItem]):
-    source_id: str
+    source_id: FileId
     file: SourceFile
     item: SourceItem
 
 
 @dataclass(frozen=True)
 class DependencyNodeResult:
-    node_id: str
+    node_id: FileId
     node: Node
     file: SourceFile | None
 
@@ -111,13 +112,13 @@ class QueryableCodeMap:
     def query(self, items: Iterable[T]) -> QueryBuilder[T]:
         return QueryBuilder(items)
 
-    def source_ids(self) -> tuple[str, ...]:
+    def source_ids(self) -> tuple[FileId, ...]:
         return tuple(self.code_map.extraction.files)
 
-    def has_source_file(self, source_id: str) -> bool:
+    def has_source_file(self, source_id: FileId) -> bool:
         return source_id in self.code_map.extraction.files
 
-    def source_file(self, source_id: str) -> SourceFileResult | None:
+    def source_file(self, source_id: FileId) -> SourceFileResult | None:
         source_file = self.code_map.extraction.files.get(source_id)
         if source_file is None:
             return None
@@ -168,7 +169,7 @@ class QueryableCodeMap:
             DependencyNodeResult(
                 node_id=node_id,
                 node=node,
-                file=files.get(node_id),
+                file=files.get(FileId(node_id)),
             )
             for node_id, node in self.code_map.dependency_graph.nodes.items()
         )
@@ -176,16 +177,22 @@ class QueryableCodeMap:
     def dependency_edges(self) -> QueryBuilder[DependencyEdgeResult]:
         return self._dependency_edges(self.code_map.dependency_graph.edges)
 
-    def outgoing_dependencies(self, source_id: str) -> QueryBuilder[DependencyEdgeResult]:
+    def outgoing_dependencies(
+        self,
+        source_id: FileId,
+    ) -> QueryBuilder[DependencyEdgeResult]:
         return self._dependency_edges(self.code_map.dependency_graph.outgoing(source_id))
 
-    def incoming_dependencies(self, source_id: str) -> QueryBuilder[DependencyEdgeResult]:
+    def incoming_dependencies(
+        self,
+        source_id: FileId,
+    ) -> QueryBuilder[DependencyEdgeResult]:
         return self._dependency_edges(self.code_map.dependency_graph.incoming(source_id))
 
     def dependencies_between(
         self,
-        source_id: str,
-        target_id: str,
+        source_id: FileId,
+        target_id: FileId,
     ) -> QueryBuilder[DependencyEdgeResult]:
         return self._dependency_edges(
             self.code_map.dependency_graph.edges_between(source_id, target_id)
@@ -220,7 +227,7 @@ class QueryableCodeMap:
             DependencyEdgeResult(
                 edge=edge,
                 source_file=files.get(edge.from_id),
-                target_file=files.get(edge.to_id),
+                target_file=(files.get(edge.to_id) if edge.to_id is not None else None),
             )
             for edge in edges
         )

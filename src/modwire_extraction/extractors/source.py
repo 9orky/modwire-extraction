@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from ..identity import FileId, ImportSpecifier, ModuleId
+
 ImportCrossingType = Literal["module", "symbol"]
 SourceVisibility = Literal["public", "protected", "private"]
 SourceSignatureKind = Literal["call", "construct", "index"]
@@ -18,6 +20,7 @@ SourceCallableKind = Literal[
     "anonymous",
 ]
 SourceCallResolution = Literal["resolved", "unresolved", "external", "dynamic"]
+SourceImportResolution = Literal["resolved", "unresolved", "external"]
 SourceExportKind = Literal[
     "module",
     "class",
@@ -40,9 +43,9 @@ class SourceImportedSymbol(BaseModel):
 
 
 class SourceImport(BaseModel):
-    path: str
+    path: ImportSpecifier
     is_relative: bool
-    normalized_path: str
+    normalized_path: ImportSpecifier
     imported_name: str
     is_aliased: bool
     crossing_type: ImportCrossingType
@@ -50,6 +53,8 @@ class SourceImport(BaseModel):
     statement_id: int
     join_key: str
     uses_joined_import: bool
+    resolution: SourceImportResolution = "unresolved"
+    target_file_id: FileId | None = None
     imported_symbols: list[SourceImportedSymbol] = Field(default_factory=list)
 
 
@@ -58,9 +63,9 @@ class SourceExport(BaseModel):
     local_name: str
     kind: SourceExportKind
     crossing_type: ImportCrossingType
-    path: str
+    path: ImportSpecifier
     is_relative: bool
-    normalized_path: str
+    normalized_path: ImportSpecifier
     is_reexport: bool
     is_default: bool
     is_aliased: bool
@@ -96,7 +101,7 @@ class SourceParameter(BaseModel):
 
 class SourceCallable(BaseModel):
     id: str
-    source_id: str
+    source_id: FileId
     name: str
     qualified_name: str
     owner_name: str = ""
@@ -117,7 +122,7 @@ class SourceCallable(BaseModel):
 class SourceCall(BaseModel):
     source_callable_id: str
     target_callable_id: str = ""
-    source_id: str
+    source_id: FileId
     line: int
     expression: str
     resolution: SourceCallResolution
@@ -184,6 +189,8 @@ class SourceAbstractClass(BaseModel):
 
 
 class SourceFile(BaseModel):
+    file_id: FileId
+    module_id: ModuleId
     imports: list[SourceImport]
     exports: list[SourceExport] = Field(default_factory=list)
     classes: list[SourceClass]
