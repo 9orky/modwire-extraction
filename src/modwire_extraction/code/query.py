@@ -103,7 +103,6 @@ class DependencyEdgeResult:
 class QueryableCodeMap:
     def __init__(self, code_map: CodeMap):
         self.code_map = code_map
-        self.cm = code_map
 
     def query(self, items: Iterable[T]) -> QueryBuilder[T]:
         return QueryBuilder(items)
