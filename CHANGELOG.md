@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0 - Unreleased
+
+### Added
+
+- Add distinct typed `FileId`, `ModuleId`, and `ImportSpecifier` concepts.
+- Preserve original and normalized import specifiers with explicit resolved,
+  external, or unresolved state.
+- Resolve unique project-local imports to extension-bearing tracked file IDs.
+- Raise structured duplicate-identity errors instead of overwriting files or
+  logical modules.
+
+### Changed
+
+- Keep file extensions in source IDs and callable source identities.
+- Restrict dependency graph nodes to the tracked file-ID namespace.
+- Store import specifier and resolution state on every dependency edge.
+- Add a version 2 migration guide for serialized maps and query consumers.
+
 ## 1.0.3 - 2026-07-11
 
 ### Fixed
