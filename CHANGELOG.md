@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.3 - 2026-07-11
+
+### Fixed
+
+- Restore the `QueryableCodeMap.cm` compatibility alias.
+- Mark `load_extractor` as an intentional public re-export.
+
+### Changed
+
+- Derive distribution versions from strict SemVer SCM tags.
+- Adopt the Modwire reusable CI and GitHub-Release-driven publication contract.
+
 ## 1.0.0 - 2026-06-30
 
 Initial stable release of `modwire-extraction`.

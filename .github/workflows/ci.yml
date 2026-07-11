@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: 9orky/modwire/.github/workflows/python-package.yml@workflows-v1
+    with:
+      python-versions: '["3.11", "3.12", "3.13"]'
+      build-python-version: "3.11"
+
+  extractor-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/modwire_extraction/extractors/languages/typescript/package-lock.json
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer
+      - run: python -m pip install -e ".[dev]"
+      - name: Check TypeScript extractor bundle
+        working-directory: src/modwire_extraction/extractors/languages/typescript
+        run: |
+          npm ci
+          npm run check
+          npm run build
+      - name: Check PHP extractor bundle
+        working-directory: src/modwire_extraction/extractors/languages/php
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          composer check
+          composer build
+      - name: Verify generated TypeScript bundle is committed
+        run: git diff --exit-code -- src/modwire_extraction/extractors/languages/typescript/script.js

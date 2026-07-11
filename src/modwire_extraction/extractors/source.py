@@ -2,7 +2,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 ImportCrossingType = Literal["module", "symbol"]
 SourceVisibility = Literal["public", "protected", "private"]
 SourceSignatureKind = Literal["call", "construct", "index"]

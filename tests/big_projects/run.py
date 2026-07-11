@@ -12,7 +12,6 @@ from typing import Any
 
 from modwire_extraction import ModwireExtraction
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = Path(__file__).with_name("projects.json")
 

@@ -9,8 +9,8 @@ Required before publishing `modwire-extraction` 1.0.0:
   - Repository name: `modwire-extraction`
   - Workflow name: `release.yml`
   - Environment name: `pypi`
-- Publish releases with a tag named `vX.Y.Z` or `X.Y.Z`. The workflow uses
-  that tag to set the package version before building and verifies the
+- Publish releases from an existing strict SemVer tag named `vX.Y.Z`. The build backend
+  derives the package version from that tag and the reusable workflow verifies the
   generated artifact filenames match the tag.
 - Resolve or explicitly document dependency graph semantics. Current graph
   edges use normalized import strings, so imports such as

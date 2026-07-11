@@ -1,8 +1,8 @@
 from pathlib import Path
 
+from .code import CodeMap, QueryableCodeMap
 from .dependency import build_dependency_graph
 from .extractors import languages
-from .code import CodeMap, QueryableCodeMap
 
 
 class ModwireExtraction:
