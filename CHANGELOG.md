@@ -4,6 +4,7 @@
 
 ### Added
 
+- Export `QueryableCodeMap` from the package root for caller-facing type annotations.
 - Add distinct typed `FileId`, `ModuleId`, and `ImportSpecifier` concepts.
 - Preserve original and normalized import specifiers with explicit resolved,
   external, or unresolved state.

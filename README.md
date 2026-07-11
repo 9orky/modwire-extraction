@@ -7,16 +7,16 @@ The primary API starts from `ModwireExtraction`:
 ```python
 from pathlib import Path
 
-from modwire_extraction import ModwireExtraction
+from modwire_extraction import ModwireExtraction, QueryableCodeMap
 
-queryable_map = ModwireExtraction(Path("src")).generate_queryable_map("python")
+queryable_map: QueryableCodeMap = ModwireExtraction(Path("src")).generate_queryable_map("python")
 print(queryable_map.source_ids())
 ```
 
 Public data and query helpers are exported from:
 
-- `modwire_extraction` for `ModwireExtraction`.
-- `modwire_extraction.code` for `CodeMap`, `QueryableCodeMap`, and query result types.
+- `modwire_extraction` for `ModwireExtraction` and `QueryableCodeMap`.
+- `modwire_extraction.code` for `CodeMap` and query result types.
 - `modwire_extraction.dependency` for dependency graph helpers.
 - `modwire_extraction.extractors` for extractor loading.
 
