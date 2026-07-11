@@ -5,7 +5,7 @@ Required before publishing `modwire-extraction` 1.0.0:
 - Decide and add the project license. Add a `LICENSE` file and matching
   `license` metadata in `pyproject.toml`. Done: MIT.
 - Configure PyPI Trusted Publishing for GitHub Actions:
-  - Repository owner: `9orky`
+  - Repository owner: `modwire`
   - Repository name: `modwire-extraction`
   - Workflow name: `release.yml`
   - Environment name: `pypi`

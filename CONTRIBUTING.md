@@ -79,7 +79,7 @@ Publishing to PyPI is handled by `.github/workflows/release.yml` from the
 package version from the existing GitHub Release tag. Configure the PyPI trusted publisher
 with:
 
-- Repository owner: `9orky`
+- Repository owner: `modwire`
 - Repository name: `modwire-extraction`
 - Workflow name: `release.yml`
 - Environment name: `pypi`
