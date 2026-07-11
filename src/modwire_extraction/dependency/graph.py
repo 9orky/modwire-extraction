@@ -27,26 +27,14 @@ class Edge(BaseModel):
     kind: str = "import"
 
 
-def _empty_edges() -> list[Edge]:
-    return []
-
-
-def _empty_nodes() -> dict[FileId, Node]:
-    return {}
-
-
-def _empty_edge_index() -> dict[FileId, list[Edge]]:
-    return {}
-
-
 class DependencyGraph(BaseModel):
-    nodes: dict[FileId, Node] = Field(default_factory=_empty_nodes)
-    edges: list[Edge] = Field(default_factory=_empty_edges)
+    nodes: dict[FileId, Node] = Field(default_factory=dict[FileId, Node])
+    edges: list[Edge] = Field(default_factory=list[Edge])
     _outgoing_by_node: dict[FileId, list[Edge]] = PrivateAttr(
-        default_factory=_empty_edge_index
+        default_factory=dict[FileId, list[Edge]]
     )
     _incoming_by_node: dict[FileId, list[Edge]] = PrivateAttr(
-        default_factory=_empty_edge_index
+        default_factory=dict[FileId, list[Edge]]
     )
 
     def model_post_init(self, __context: Any) -> None:
