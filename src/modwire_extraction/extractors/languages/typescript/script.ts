@@ -27,10 +27,23 @@ function parseSourceFile(filePath, content) {
         skipLoadingLibFiles: true,
         useInMemoryFileSystem: true,
     });
-    return project.createSourceFile(filePath, content, {
+    const sourceFile = project.createSourceFile(filePath, content, {
         overwrite: true,
         scriptKind: scriptKindForPath(filePath),
     });
+
+    const parseDiagnostics = (
+        sourceFile.compilerNode as ts.SourceFile & {
+            parseDiagnostics: readonly ts.DiagnosticWithLocation[];
+        }
+    ).parseDiagnostics;
+    const diagnostic = parseDiagnostics[0];
+    if (diagnostic !== undefined) {
+        const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+        throw new Error(`TypeScript syntax error in ${filePath}: ${message}`);
+    }
+
+    return sourceFile;
 }
 
 function buildLineStarts(content) {

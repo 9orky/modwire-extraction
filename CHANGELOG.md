@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.1 - 2026-07-30
+
+### Fixed
+
+- Raise extraction errors for TypeScript syntax diagnostics instead of accepting
+  the parser's recovered source tree.
+
 ## 2.0.0 - Unreleased
 
 ### Added
