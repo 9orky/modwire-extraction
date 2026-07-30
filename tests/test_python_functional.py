@@ -256,16 +256,12 @@ def test_source_extractor_uses_parallel_batch_config(tmp_path: Path) -> None:
     assert sorted(extractor.batch_sizes) == [1, 2, 2]
 
 
-def test_python_extraction_tolerates_syntax_error_files(tmp_path: Path) -> None:
+def test_python_extraction_raises_on_syntax_error_files(tmp_path: Path) -> None:
     source_path = tmp_path / "broken.py"
     source_path.write_text("1syntax_error\n")
 
-    code_map = ModwireExtraction(tmp_path).generate_map("python")
-
-    assert code_map.extraction.files_found == 1
-    assert code_map.extraction.files["broken.py"].line_count == 1
-    assert code_map.extraction.files["broken.py"].public_symbol_count == 0
-    assert code_map.extraction.files["broken.py"].imports == []
+    with pytest.raises(RuntimeError, match="python extractor failed with exit code"):
+        ModwireExtraction(tmp_path).generate_map("python")
 
 
 def test_typescript_extraction_tolerates_non_literal_import_specifiers(
@@ -307,17 +303,13 @@ def test_php_extraction_tolerates_anonymous_class_construction(
     assert code_map.extraction.files["anonymous.php"].calls == []
 
 
-def test_php_extraction_tolerates_syntax_error_files(tmp_path: Path) -> None:
+def test_php_extraction_raises_on_syntax_error_files(tmp_path: Path) -> None:
     _skip_missing_runtime("php")
     source_path = tmp_path / "broken.php"
     source_path.write_text("<?php\nfunction broken(\n")
 
-    code_map = ModwireExtraction(tmp_path).generate_map("php")
-
-    assert code_map.extraction.files_found == 1
-    assert code_map.extraction.files["broken.php"].line_count == 3
-    assert code_map.extraction.files["broken.php"].public_symbol_count == 0
-    assert code_map.extraction.files["broken.php"].imports == []
+    with pytest.raises(RuntimeError, match="php extractor failed with exit code"):
+        ModwireExtraction(tmp_path).generate_map("php")
 
 
 def test_missing_external_runtime_raises_stable_error(

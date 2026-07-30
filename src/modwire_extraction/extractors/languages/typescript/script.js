@@ -229773,29 +229773,6 @@ function codeLineCount(content) {
         return trimmed !== '' && !trimmed.startsWith('//');
     }).length;
 }
-function emptySourceFile(content) {
-    return {
-        imports: [],
-        exports: [],
-        classes: [],
-        interfaces: [],
-        types: [],
-        abstract_classes: [],
-        functions: [],
-        values: [],
-        callables: [],
-        calls: [],
-        line_count: content.split('\n').length,
-        code_line_count: codeLineCount(content),
-        public_symbol_count: 0,
-    };
-}
-function shouldReturnEmptySourceFile(error) {
-    if (error instanceof RangeError && error.message.includes('Maximum call stack size exceeded')) {
-        return true;
-    }
-    return error instanceof Error && error.message.startsWith('Debug Failure');
-}
 function callableId(sourceId, qualifiedName) {
     return `${sourceId}::${qualifiedName}`;
 }
@@ -230624,29 +230601,13 @@ function publicSymbolCount(exports) {
 }
 function extractFile(filePath, sourcesRoot, sourceId = null) {
     const content = node_fs_1.default.readFileSync(filePath, 'utf8');
-    let sourceFile;
-    let lineStarts;
-    let resolvedSourceId;
-    let classes;
-    let abstractClasses;
-    let imports;
-    let exports;
-    let callableGraph;
-    try {
-        sourceFile = parseSourceFile(node_path_1.default.resolve(filePath), content);
-        lineStarts = buildLineStarts(content);
-        resolvedSourceId = sourceId || sourceIdForPath(filePath, sourcesRoot);
-        ({ classes, abstractClasses } = collectClasses(sourceFile, lineStarts));
-        imports = collectImports(sourceFile, filePath, sourcesRoot);
-        exports = collectExports(sourceFile, filePath, sourcesRoot);
-        callableGraph = collectCallableGraph(sourceFile, lineStarts, resolvedSourceId);
-    }
-    catch (error) {
-        if (shouldReturnEmptySourceFile(error)) {
-            return emptySourceFile(content);
-        }
-        throw error;
-    }
+    const sourceFile = parseSourceFile(node_path_1.default.resolve(filePath), content);
+    const lineStarts = buildLineStarts(content);
+    const resolvedSourceId = sourceId || sourceIdForPath(filePath, sourcesRoot);
+    const { classes, abstractClasses } = collectClasses(sourceFile, lineStarts);
+    const imports = collectImports(sourceFile, filePath, sourcesRoot);
+    const exports = collectExports(sourceFile, filePath, sourcesRoot);
+    const callableGraph = collectCallableGraph(sourceFile, lineStarts, resolvedSourceId);
     return {
         imports,
         exports,
