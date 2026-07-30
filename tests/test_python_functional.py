@@ -264,6 +264,15 @@ def test_python_extraction_raises_on_syntax_error_files(tmp_path: Path) -> None:
         ModwireExtraction(tmp_path).generate_map("python")
 
 
+def test_typescript_extraction_raises_on_syntax_error_files(tmp_path: Path) -> None:
+    _skip_missing_runtime("typescript")
+    source_path = tmp_path / "broken.ts"
+    source_path.write_text("export const = ;\n")
+
+    with pytest.raises(RuntimeError, match="typescript extractor failed with exit code"):
+        ModwireExtraction(tmp_path).generate_map("typescript")
+
+
 def test_typescript_extraction_tolerates_non_literal_import_specifiers(
     tmp_path: Path,
 ) -> None:
