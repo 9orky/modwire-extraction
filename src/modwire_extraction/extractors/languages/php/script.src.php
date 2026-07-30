@@ -35,24 +35,6 @@ function code_line_count_for_content(string $content): int {
     return $count;
 }
 
-function empty_source_file(string $content): array {
-    return [
-        'imports' => [],
-        'exports' => [],
-        'classes' => [],
-        'interfaces' => [],
-        'types' => [],
-        'abstract_classes' => [],
-        'functions' => [],
-        'values' => [],
-        'callables' => [],
-        'calls' => [],
-        'line_count' => line_count_for_content($content),
-        'code_line_count' => code_line_count_for_content($content),
-        'public_symbol_count' => 0,
-    ];
-}
-
 function source_id_for_path(string $path, string $sourcesRoot): string {
     $normalizedPath = str_replace('\\', '/', realpath($path) ?: $path);
     $normalizedRoot = rtrim(str_replace('\\', '/', realpath($sourcesRoot) ?: $sourcesRoot), '/');
@@ -729,11 +711,7 @@ function extract_file(string $path, ?string $sourceId = null, ?string $sourcesRo
         exit(1);
     }
 
-    try {
-        $nodes = (new ParserFactory())->createForHostVersion()->parse($content) ?? [];
-    } catch (Error $error) {
-        return empty_source_file($content);
-    }
+    $nodes = (new ParserFactory())->createForHostVersion()->parse($content) ?? [];
 
     $root = $sourcesRoot ?? dirname($path);
     $resolvedSourceId = $sourceId ?? source_id_for_path($path, $root);
